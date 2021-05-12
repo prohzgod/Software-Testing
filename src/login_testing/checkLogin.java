@@ -10,13 +10,14 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.Test;
 import base_class.BaseClass;
 
-public class checkLogin extends BaseClass {
+public class CheckLogin extends BaseClass {
 	
 	@Test(description="This TC will check valid account to login to application")
 	public void login() throws Exception {
@@ -34,13 +35,13 @@ public class checkLogin extends BaseClass {
 		
 		try {
 			  File src=new File("C:\\Users\\DELL\\eclipse-workspace\\Do_An_KTPM\\excelData\\accountData.xlsx");
-			  FileInputStream fis=new FileInputStream(src);
+			  FileInputStream fis = new FileInputStream(src);
 			 
 			  // load the workbook
-			  XSSFWorkbook workbook=new XSSFWorkbook(fis);
+			  XSSFWorkbook workbook = new XSSFWorkbook(fis);
 			 
 			  // get the sheet which you want to modify or create
-			  XSSFSheet sheet1= workbook.getSheetAt(0);
+			  XSSFSheet sheet1 = workbook.getSheetAt(0);
 			  
 			  driver.findElement(By.xpath(pro.getProperty("icon_user"))).click();
 			  driver.findElement(By.xpath(pro.getProperty("login_account"))).click();
@@ -59,30 +60,44 @@ public class checkLogin extends BaseClass {
 					  if(cell.getColumnIndex()==0) {
 						  driver.findElement (By.xpath(pro.getProperty("emailLogin"))).sendKeys(cell.getStringCellValue());
 					  } else if(cell.getColumnIndex()==1){
-						  driver.findElement(By.xpath(pro.getProperty("passLogin"))).sendKeys(cell.getStringCellValue());
+						  if(cell.getCellType() == cell.getCellType().NUMERIC) {
+							  driver.findElement(By.xpath(pro.getProperty("passLogin"))).sendKeys(String.valueOf(cell.getNumericCellValue()));
+						  } else {
+							  driver.findElement(By.xpath(pro.getProperty("passLogin"))).sendKeys(cell.getStringCellValue());
+						  };
 					  } else{
 						  break; 
 					  };         
 				  };
 				  
-				  driver.findElement(By.xpath(pro.getProperty("login_button"))).click();
-			   
+				  driver.findElement(By.xpath(pro.getProperty("login_button"))).click();		  
+				  
 				  // Explicit wait condition for alert
-				  WebDriverWait waiter = new WebDriverWait(driver, 5);
-				  //alertIsPresent() condition applied
-				  if(waiter.until(ExpectedConditions.alertIsPresent()) != null) {
+				  WebDriverWait wait = new WebDriverWait(driver, 5);
+				  Alert alert = null;
+				  
+				  try {
+				      alert = wait.until(ExpectedConditions.alertIsPresent());
+				  } catch(Exception e) {
+					  System.out.println(e.getMessage());
+				  };
+
+				  if(alert == null) {
+					  driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+				      wait.until(ExpectedConditions.elementToBeClickable(By.xpath(pro.getProperty("icon_user")))).click();
+				      wait.until(ExpectedConditions.elementToBeClickable(By.xpath(pro.getProperty("logout_account")))).click();
+				      wait.until(ExpectedConditions.elementToBeClickable(By.xpath(pro.getProperty("icon_user")))).click();
+				      wait.until(ExpectedConditions.elementToBeClickable(By.xpath(pro.getProperty("login_account")))).click();
+					  sheet1.getRow(row.getRowNum()).createCell(2).setCellValue("Pass");
+					  FileOutputStream foutPass = new FileOutputStream(new File("C:\\Users\\DELL\\eclipse-workspace\\Do_An_KTPM\\excelData\\validAccount.xlsx"));
+					  workbook.write(foutPass);
+					  foutPass.close();
+				  } else {
 					  driver.switchTo().alert().accept();
 					  sheet1.getRow(row.getRowNum()).createCell(2).setCellValue("Fail");
-					  FileOutputStream fout=new FileOutputStream(new File("C:\\Users\\DELL\\eclipse-workspace\\Do_An_KTPM\\excelData\\validAccount.xlsx"));
-					  workbook.write(fout);
-					  fout.close();
-				  } else {
-					  driver.navigate().back();
-					  Thread.sleep(2000);
-					  sheet1.getRow(row.getRowNum()).createCell(2).setCellValue("Pass");
-					  FileOutputStream fout=new FileOutputStream(new File("C:\\Users\\DELL\\eclipse-workspace\\Do_An_KTPM\\excelData\\validAccount.xlsx"));
-					  workbook.write(fout);
-					  fout.close();
+					  FileOutputStream foutFail = new FileOutputStream(new File("C:\\Users\\DELL\\eclipse-workspace\\Do_An_KTPM\\excelData\\validAccount.xlsx"));
+					  workbook.write(foutFail);
+					  foutFail.close();
 				  };
 			  };
 			 
